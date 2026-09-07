@@ -1,0 +1,29 @@
+name: Publish daily research update
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Runs after collection/training. GitHub cron uses UTC.
+    - cron: "0 14 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-readme-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Render daily Smallcap research update
+        run: python scripts/update_readme.py
+      - name: Commit README when it changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet || git commit -m "docs: refresh daily research update"
+          git push

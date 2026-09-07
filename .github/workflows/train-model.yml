@@ -4,12 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       cutoff:
-        description: "Holdout cutoff (YYYY-MM-DD)"
-        required: true
+        description: "Holdout cutoff (YYYY-MM-DD); blank uses one year ago"
+        required: false
         type: string
+  schedule:
+    # Train after official collection; daily README publication runs afterwards.
+    - cron: "0 13 * * 1-5"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   train:
@@ -30,10 +33,20 @@ jobs:
           what-moves-india ingest-prices
           what-moves-india ingest-news
           what-moves-india ingest-disclosures
-          what-moves-india train --cutoff "${{ inputs.cutoff }}"
+          CUTOFF="${{ inputs.cutoff }}"
+          CUTOFF="${CUTOFF:-$(date -u -d '365 days ago' +%F)}"
+          what-moves-india train --cutoff "$CUTOFF"
       - name: Retain model report
         uses: actions/upload-artifact@v4
         with:
           name: model-output-${{ github.run_id }}
           path: data/outputs/
           if-no-files-found: ignore
+      - name: Commit validated model outputs
+        run: |
+          if [ ! -d data/outputs ]; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/outputs
+          git diff --cached --quiet || git commit -m "model: refresh research outputs"
+          git push

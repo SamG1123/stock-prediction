@@ -59,9 +59,22 @@ python scripts/collect_public_data.py --start 2026-08-03 --end 2026-08-03 --news
 NSE's public archive path and report formats can change. When a file is blocked or absent, the manifest flags it; use the official reports UI or an NSE historical-data licence to fill it rather than substituting an unverified feed.
 GDELT may return HTTP 429 during a large shared-IP run; the collector backs off and retries, and preserves a failed manifest row if the service remains rate-limited.
 
+<!-- DAILY-INSIGHTS:START -->
+## Daily Small-Cap Research Update
+
+Last refreshed: **2026-09-07 04:48 UTC**.
+
+- Current official NIFTY Smallcap 250 snapshot: **250 stocks**.
+- Largest industry groups: Financial Services (42), Capital Goods (35), Healthcare (26), Automobile and Auto Components (19), Chemicals (18), Consumer Services (17).
+
+### Prediction status
+
+**No model probabilities are published yet.** The pipeline will only publish them after it has a trained model based on validated official NSE price history. This avoids presenting unverified or fabricated stock predictions.
+<!-- DAILY-INSIGHTS:END -->
+
 ## GitHub Actions deployment
 
-Three workflows are ready under `.github/workflows/`: daily official-input collection, batched weekday GDELT collection, and manually triggered model training with downloadable result artifacts. Push this repository to GitHub, then in **Settings → Actions → General** set **Workflow permissions** to **Read and write permissions** so the two collectors can commit raw source files and manifests. Scheduled workflows run in UTC from the default branch. Use the Actions tab to run a historical backfill in small windows. If the repository is public, create any commit or manually re-enable schedules at least once every 60 days.
+Four workflows are ready under `.github/workflows/`: daily official-input collection, batched weekday GDELT collection, model training, and daily README publication. The README update includes a transparent current-universe summary and only publishes model probabilities after validated official price inputs have produced a trained model. In **Settings → Actions → General**, set **Workflow permissions** to **Read and write permissions** so the collectors and publisher can commit outputs. Scheduled workflows run in UTC from the default branch. Use the Actions tab to run a historical backfill in small windows. If the repository is public, create any commit or manually re-enable schedules at least once every 60 days.
 
 ## Required raw-file schemas
 
