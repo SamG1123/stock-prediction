@@ -1,0 +1,43 @@
+name: Collect official market inputs
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_date:
+        description: "UTC date to collect (YYYY-MM-DD); blank means today"
+        required: false
+        type: string
+  schedule:
+    # 17:50 IST on weekdays, after NSE close. Cron is UTC.
+    - cron: "20 12 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: official-market-collection
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select collection date
+        id: date
+        env:
+          REQUESTED_DATE: ${{ inputs.run_date }}
+        run: |
+          echo "value=${REQUESTED_DATE:-$(date -u +%F)}" >> "$GITHUB_OUTPUT"
+      - name: Collect official universe and daily price report
+        run: |
+          python scripts/collect_public_data.py \
+            --start "${{ steps.date.outputs.value }}" \
+            --end "${{ steps.date.outputs.value }}" --prices --pause 1.25
+      - name: Commit immutable source files and manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/raw/universe data/raw/nse_bhavcopy data/manifests/public_collection.csv
+          git diff --cached --quiet || git commit -m "data: collect ${{ steps.date.outputs.value }}"
+          git push

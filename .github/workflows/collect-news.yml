@@ -1,0 +1,52 @@
+name: Collect batched news inputs
+
+on:
+  workflow_dispatch:
+    inputs:
+      news_date:
+        description: "UTC date to collect (YYYY-MM-DD); blank means yesterday"
+        required: false
+        type: string
+      batch:
+        description: "Batch number, 0 through 12 (20 Smallcap stocks per batch)"
+        required: true
+        default: "0"
+        type: string
+  schedule:
+    # Thirteen sequential hourly batches: 250 symbols / 20 per batch.
+    - cron: "15 0-12 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gdelt-news-collection
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select date and batch
+        id: selection
+        env:
+          REQUESTED_DATE: ${{ inputs.news_date }}
+          REQUESTED_BATCH: ${{ inputs.batch }}
+        run: |
+          echo "date=${REQUESTED_DATE:-$(date -u -d yesterday +%F)}" >> "$GITHUB_OUTPUT"
+          echo "batch=${REQUESTED_BATCH:-$(date -u +%-H)}" >> "$GITHUB_OUTPUT"
+      - name: Collect 20-stock GDELT batch
+        run: |
+          OFFSET=$(( ${{ steps.selection.outputs.batch }} * 20 ))
+          python scripts/collect_public_data.py \
+            --start "${{ steps.selection.outputs.date }}" \
+            --end "${{ steps.selection.outputs.date }}" \
+            --news --offset "$OFFSET" --max-symbols 20 --pause 1.25
+      - name: Commit news and provenance
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/raw/news data/raw/universe data/manifests/public_collection.csv
+          git diff --cached --quiet || git commit -m "data: collect GDELT ${{ steps.selection.outputs.date }} batch ${{ steps.selection.outputs.batch }}"
+          git push

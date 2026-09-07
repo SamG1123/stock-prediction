@@ -1,0 +1,39 @@
+name: Train research model
+
+on:
+  workflow_dispatch:
+    inputs:
+      cutoff:
+        description: "Holdout cutoff (YYYY-MM-DD)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install model dependencies
+        run: pip install .
+      - name: Train only when official prices are present
+        run: |
+          if [ ! -d data/raw/nse_bhavcopy ] || ! find data/raw/nse_bhavcopy -type f \( -name '*.zip' -o -name '*.csv' \) | grep -q .; then
+            echo "No NSE price inputs are committed yet; training intentionally skipped."
+            exit 0
+          fi
+          what-moves-india ingest-prices
+          what-moves-india ingest-news
+          what-moves-india ingest-disclosures
+          what-moves-india train --cutoff "${{ inputs.cutoff }}"
+      - name: Retain model report
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-output-${{ github.run_id }}
+          path: data/outputs/
+          if-no-files-found: ignore
