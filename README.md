@@ -62,10 +62,10 @@ GDELT may return HTTP 429 during a large shared-IP run; the collector backs off 
 <!-- DAILY-INSIGHTS:START -->
 ## Daily Small-Cap Research Update
 
-Last refreshed: **2026-09-28 20:20 UTC**.
+Last refreshed: **2026-09-29 19:03 UTC**.
 
 - Current official NIFTY Smallcap 250 snapshot: **251 stocks**.
-- Largest industry groups: Financial Services (42), Capital Goods (35), Healthcare (26), Automobile and Auto Components (19), Chemicals (18), Consumer Services (17).
+- Largest industry groups: Capital Goods (42), Financial Services (38), Automobile and Auto Components (22), Healthcare (20), Chemicals (17), Fast Moving Consumer Goods (13).
 
 ### Prediction status
 
